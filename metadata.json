@@ -1,0 +1,7 @@
+{
+  "name": "Ravi-Textile ERP",
+  "description": "A modern Enterprise Resource Planning system specifically designed for Ravi-Textile. Manage inventory, production lines, and sales with real-time insights.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
