@@ -278,7 +278,7 @@ const Orders: React.FC<OrdersProps> = ({
           </form>
       </BaseModal>
 
-      {selectedOrder && <OrderDetailsModal order={selectedOrder} customer={customers.find(c => c.name === selectedOrder.customerName)} onClose={() => setSelectedOrder(null)} />}
+      {selectedOrder && <OrderDetailsModal order={selectedOrder} customer={customers.find(c => c.name === selectedOrder.customerName)} onClose={() => setSelectedOrder(null)} currency={currency} />}
     </motion.div>
   );
 };

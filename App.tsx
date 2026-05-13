@@ -47,6 +47,10 @@ import DeliveryChallan from './components/DeliveryChallan';
 import Sampling from './components/Sampling';
 import NotificationCenter from './components/NotificationCenter';
 import TaskManager from './components/TaskManager';
+import YarnManagement from './components/YarnManagement';
+import DyeingProcessing from './components/DyeingProcessing';
+import FabricCostingComp from './components/FabricCosting';
+import DispatchPlanner from './components/DispatchPlanner';
 import { 
   InventoryItem, Order, Customer, TeamMember, Supplier, Design, JobWork, 
   Machine, Project, Transaction, Agent, JobSlip, Karigar, AttendanceRecord, 
@@ -55,7 +59,8 @@ import {
   FabricInspection, PurchaseOrder, ProductionJob, BaseEntity, GatePass,
   StockAudit, PayrollAdjustment, SampleRequest, Pack, StockTransfer,
   ShopifyConfig, InvoiceConfig, SecurityConfig, CommunicationConfig, AdvancedConfig,
-  Notification, Task
+  Notification, Task,
+  YarnLot, YarnBlend, DyeingJob, FabricCosting, DispatchEntry
 } from './types';
 import { getItem, setItem, hydrateFromNative } from './utils/indexedDB';
 import { Loader2, Command, Menu } from 'lucide-react';
@@ -128,6 +133,11 @@ const App: React.FC = () => {
   const [transfers, setTransfers] = useState<StockTransfer[]>([]);
   const [packs, setPacks] = useState<Pack[]>([]);
   const [payrollAdjustments, setPayrollAdjustments] = useState<Record<string, PayrollAdjustment>>({});
+  const [yarnLots, setYarnLots] = useState<YarnLot[]>([]);
+  const [yarnBlends, setYarnBlends] = useState<YarnBlend[]>([]);
+  const [dyeingJobs, setDyeingJobs] = useState<DyeingJob[]>([]);
+  const [fabricCostings, setFabricCostings] = useState<FabricCosting[]>([]);
+  const [dispatches, setDispatches] = useState<DispatchEntry[]>([]);
 
   const refreshData = useCallback(async () => {
     setIsLoading(true);
@@ -254,6 +264,7 @@ const App: React.FC = () => {
   const packMgr = handleCollection('packs', packs, setPacks);
   const transferMgr = handleCollection('transfers', transfers, setTransfers);
   const auditMgr = handleCollection('stockAudits', stockAudits, setStockAudits);
+  const projectMgr = handleCollection('projects', projects, setProjects);
 
   const handleUpdatePayrollAdjustment = (key: string, adjustment: PayrollAdjustment) => {
     const newAdjustments = { ...payrollAdjustments, [key]: adjustment };
@@ -458,14 +469,14 @@ const App: React.FC = () => {
 
                             {/* Sales & Orders */}
                             {currentView === 'ORDERS' && <SalesOrder orders={active(orders)} customers={active(customers)} inventory={active(inventory)} designs={active(designs)} agents={active(agents)} onAddOrder={ordMgr.add} onUpdateOrder={ordMgr.update} onDeleteOrder={ordMgr.remove} currency={currencySymbol} />}
-                            {currentView === 'DELIVERY_CHALLAN' && <DeliveryChallan orders={active(orders)} customers={active(customers)} onAddChallan={ordMgr.add} onUpdateChallan={ordMgr.update} currency={currencySymbol} />}
+                            {currentView === 'DELIVERY_CHALLAN' && <DeliveryChallan orders={active(orders)} customers={active(customers)} onAddChallan={ordMgr.add} onUpdateChallan={ordMgr.update} currency={currencySymbol} companyInfo={companyInfo} />}
 
                             {/* Production & Inventory */}
                             {currentView === 'PRODUCTION' && <Production jobs={active(production)} karigars={active(karigars)} designs={active(designs)} machines={active(machines)} samples={active(samples)} onAddJob={prodMgr.add} onUpdateJob={prodMgr.update} currency={currencySymbol} />}
                             {currentView === 'SAMPLING' && <Sampling samples={active(samples)} designs={active(designs)} karigars={active(karigars)} customers={active(customers)} onAdd={sampleMgr.add} onUpdate={sampleMgr.update} onDelete={sampleMgr.remove} currency={currencySymbol} />}
                             {currentView === 'TRACK_LOTS' && <TrackLots jobs={active(production)} onUpdateJob={prodMgr.update} />}
                             {currentView === 'QUALITY' && <QualityControl reports={active(qualityReports)} inspections={active(inspections)} onAddInspection={inspectionMgr.add} currency={currencySymbol} />}
-                            {currentView === 'INVENTORY' && <Inventory items={active(inventory)} onAdd={invMgr.add} onUpdate={invMgr.update} onDelete={invMgr.remove} currency={currencySymbol} />}
+                            {currentView === 'INVENTORY' && <Inventory items={active(inventory)} production={active(production)} designs={active(designs)} onAdd={invMgr.add} onUpdate={invMgr.update} onDelete={invMgr.remove} currency={currencySymbol} />}
                             {currentView === 'CATALOG' && <DesignCatalog designs={active(designs)} inventory={active(inventory)} onAdd={designMgr.add} onUpdate={designMgr.update} onDelete={designMgr.remove} currency={currencySymbol} />}
                             {currentView === 'DESIGN_RECIPE' && <DesignRecipe designs={active(designs)} inventory={active(inventory)} onAdd={designMgr.add} onUpdate={designMgr.update} onDelete={designMgr.remove} currency={currencySymbol} />}
                             {currentView === 'JOB_WORK' && <JobWorkComp jobs={active(jobWorks)} designs={active(designs)} inventory={active(inventory)} onAdd={jobWorkMgr.add} onUpdate={jobWorkMgr.update} currency={currencySymbol} />}
@@ -552,7 +563,7 @@ const App: React.FC = () => {
                                 currency={currencySymbol} 
                               />
                             )}
-                            {currentView === 'ACCOUNTING' && <Accounting transactions={active(transactions)} onAddTransaction={txnMgr.add} customers={active(customers)} karigars={active(karigars)} agents={active(agents)} team={active(team)} loans={active(loans)} currency={currencySymbol} />}
+                            {currentView === 'ACCOUNTING' && <Accounting transactions={active(transactions)} onAddTransaction={txnMgr.add} customers={active(customers)} karigars={active(karigars)} agents={active(agents)} team={active(team)} loans={active(loans)} purchaseOrders={active(purchaseOrders)} salesOrders={active(orders)} currency={currencySymbol} />}
                             {currentView === 'CASH_BOOK' && <CashBook transactions={active(transactions)} onAddTransaction={txnMgr.add} currency={currencySymbol} />}
                             {currentView === 'AGENT_KHATA' && <AgentKhata agents={active(agents)} onUpdateAgent={agentMgr.update} currency={currencySymbol} />}
                             {currentView === 'ATTENDANCE' && (
@@ -618,6 +629,49 @@ const App: React.FC = () => {
                             )}
                             {currentView === 'NOTIFICATIONS' && <NotificationCenter notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onDelete={handleDeleteNotification} onClearAll={handleClearAllNotifications} />}
                             {currentView === 'TASKS' && <TaskManager tasks={tasks} team={active(team)} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} />}
+                            {currentView === 'PROJECTS' && <Projects projects={active(projects)} team={active(team)} customers={active(customers)} onAddProject={projectMgr.add} onUpdateProject={projectMgr.update} onDeleteProject={projectMgr.remove} currency={currencySymbol} />}
+                            {currentView === 'OPENING_STOCK' && <OpeningStock items={active(inventory)} onAdd={invMgr.add} onUpdate={invMgr.update} onDelete={invMgr.remove} currency={currencySymbol} />}
+                            {currentView === 'YARN_MANAGEMENT' && (
+                              <YarnManagement
+                                lots={active(yarnLots)}
+                                blends={active(yarnBlends)}
+                                onAddLot={handleCollection('yarnLots', yarnLots, setYarnLots).add}
+                                onUpdateLot={handleCollection('yarnLots', yarnLots, setYarnLots).update}
+                                onDeleteLot={handleCollection('yarnLots', yarnLots, setYarnLots).remove}
+                                onAddBlend={handleCollection('yarnBlends', yarnBlends, setYarnBlends).add}
+                                onUpdateBlend={handleCollection('yarnBlends', yarnBlends, setYarnBlends).update}
+                                currency={currencySymbol}
+                              />
+                            )}
+                            {currentView === 'DYEING_PROCESSING' && (
+                              <DyeingProcessing
+                                jobs={active(dyeingJobs)}
+                                onAddJob={handleCollection('dyeingJobs', dyeingJobs, setDyeingJobs).add}
+                                onUpdateJob={handleCollection('dyeingJobs', dyeingJobs, setDyeingJobs).update}
+                                onDeleteJob={handleCollection('dyeingJobs', dyeingJobs, setDyeingJobs).remove}
+                                currency={currencySymbol}
+                              />
+                            )}
+                            {currentView === 'FABRIC_COSTING' && (
+                              <FabricCostingComp
+                                costings={active(fabricCostings)}
+                                designs={active(designs)}
+                                onAdd={handleCollection('fabricCostings', fabricCostings, setFabricCostings).add}
+                                onUpdate={handleCollection('fabricCostings', fabricCostings, setFabricCostings).update}
+                                onDelete={handleCollection('fabricCostings', fabricCostings, setFabricCostings).remove}
+                                currency={currencySymbol}
+                              />
+                            )}
+                            {currentView === 'DISPATCH_PLANNER' && (
+                              <DispatchPlanner
+                                dispatches={active(dispatches)}
+                                orders={active(orders)}
+                                onAdd={handleCollection('dispatches', dispatches, setDispatches).add}
+                                onUpdate={handleCollection('dispatches', dispatches, setDispatches).update}
+                                onDelete={handleCollection('dispatches', dispatches, setDispatches).remove}
+                                currency={currencySymbol}
+                              />
+                            )}
                         </motion.div>
                     </AnimatePresence>
                 </div>

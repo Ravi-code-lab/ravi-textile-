@@ -9,7 +9,10 @@ import {
   TrendingUp, AlertCircle, Zap, Activity, BarChart3, Settings
 } from 'lucide-react';
 import BaseModal from './BaseModal';
-import { format } from 'date-fns';
+import ProductionJobs from './ProductionJobs';
+import GenerateJobSlip from './GenerateJobSlip';
+import GenerateQR from './GenerateQR';
+import JobslipAnalytics from './JobslipAnalytics';
 
 interface ProductionProps {
   jobs: ProductionJob[];
@@ -36,7 +39,7 @@ const Production: React.FC<ProductionProps> = ({
   jobs, karigars, designs = [], machines = [], samples = [],
   onAddJob, onUpdateJob, currency = '₹'
 }) => {
-  const [activeTab, setActiveTab] = useState<'KANBAN' | 'LIST' | 'ANALYTICS'>('KANBAN');
+  const [activeTab, setActiveTab] = useState<'KANBAN' | 'LIST' | 'ANALYTICS' | 'JOBS' | 'JOBSLIP' | 'QR' | 'SLIP_ANALYTICS'>('KANBAN');
   const [activeStage, setActiveStage] = useState<string>('CUTTING');
   const [filter, setFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -227,6 +230,12 @@ const Production: React.FC<ProductionProps> = ({
             >
               <BarChart3 className="w-5 h-5" />
             </button>
+          </div>
+          <div className="flex rounded-lg border border-macos-border dark:border-macos-darkBorder overflow-hidden text-[10px] font-black uppercase tracking-widest">
+            <button onClick={() => setActiveTab('JOBS')} className={`px-3 py-2 transition-all ${activeTab === 'JOBS' ? 'bg-macos-accent text-white' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800'}`}>Jobs</button>
+            <button onClick={() => setActiveTab('JOBSLIP')} className={`px-3 py-2 transition-all ${activeTab === 'JOBSLIP' ? 'bg-macos-accent text-white' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800'}`}>Job Slip</button>
+            <button onClick={() => setActiveTab('QR')} className={`px-3 py-2 transition-all ${activeTab === 'QR' ? 'bg-macos-accent text-white' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800'}`}>QR</button>
+            <button onClick={() => setActiveTab('SLIP_ANALYTICS')} className={`px-3 py-2 transition-all ${activeTab === 'SLIP_ANALYTICS' ? 'bg-macos-accent text-white' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800'}`}>Slip Analytics</button>
           </div>
           <button 
             onClick={() => { setFormData({ status: 'CUTTING', priority:'NORMAL', quantity: 0, progress: 0, sizeWise: {} }); setIsModalOpen(true); }}
@@ -634,6 +643,13 @@ const Production: React.FC<ProductionProps> = ({
           </table>
         </div>
       )}
+
+      {activeTab === 'JOBS' && (
+        <ProductionJobs jobs={jobs} designs={designs} machines={machines} karigars={karigars} onUpdateJob={onUpdateJob} onAddJob={onAddJob} currency={currency} />
+      )}
+      {activeTab === 'JOBSLIP' && <GenerateJobSlip />}
+      {activeTab === 'QR' && <GenerateQR />}
+      {activeTab === 'SLIP_ANALYTICS' && <JobslipAnalytics />}
 
       {/* New Job Modal */}
       <BaseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={formData.id ? `Edit Jobslip: #${formData.id}` : "New Production Jobslip"} size="lg">

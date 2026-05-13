@@ -267,7 +267,7 @@ const SalesOrder: React.FC<SalesOrderProps> = ({
           </form>
       </BaseModal>
 
-      {selectedOrder && <OrderDetailsModal order={selectedOrder} customer={customers.find(c => c.name === selectedOrder.customerName)} onClose={() => setSelectedOrder(null)} />}
+      {selectedOrder && <OrderDetailsModal order={selectedOrder} customer={customers.find(c => c.name === selectedOrder.customerName)} onClose={() => setSelectedOrder(null)} currency={currency} />}
     </div>
   );
 };

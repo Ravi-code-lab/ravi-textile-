@@ -10,9 +10,10 @@ interface OrderDetailsModalProps {
   order: Order;
   customer?: Customer;
   onClose: () => void;
+  currency?: string;
 }
 
-const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, onClose }) => {
+const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, onClose, currency = '₹' }) => {
   
   const generateInvoice = () => {
     const doc = new jsPDF();
@@ -62,8 +63,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, 
       body: order.items.map(item => [
           item.productName,
           item.quantity,
-          `Rs. ${item.unitPrice}`,
-          `Rs. ${(item.quantity * item.unitPrice).toFixed(2)}`
+          `${currency}${item.unitPrice}`,
+          `${currency}${(item.quantity * item.unitPrice).toFixed(2)}`
       ]),
       theme: 'plain',
       headStyles: { fillColor: [245, 247, 255], textColor: [79, 70, 229], fontStyle: 'bold' },
@@ -78,18 +79,18 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, 
     const subTotal = order.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
     
     doc.text("Subtotal:", 140, finalY);
-    doc.text(`Rs. ${subTotal.toFixed(2)}`, 190, finalY, { align: 'right' });
+    doc.text(`${currency}${subTotal.toFixed(2)}`, 190, finalY, { align: 'right' });
     
     if(order.taxRate) {
         doc.text(`Tax (${order.taxRate}%):`, 140, finalY + 6);
-        doc.text(`Rs. ${(subTotal * order.taxRate/100).toFixed(2)}`, 190, finalY + 6, { align: 'right' });
+        doc.text(`${currency}${(subTotal * order.taxRate/100).toFixed(2)}`, 190, finalY + 6, { align: 'right' });
     }
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(79, 70, 229);
     doc.text("Total:", 140, finalY + 14);
-    doc.text(`Rs. ${order.totalAmount.toFixed(2)}`, 190, finalY + 14, { align: 'right' });
+    doc.text(`${currency}${order.totalAmount.toFixed(2)}`, 190, finalY + 14, { align: 'right' });
 
     // Footer terms
     doc.setFont("helvetica", "normal");
@@ -145,7 +146,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, 
   };
 
   const shareOnWhatsApp = () => {
-      const message = `Hello ${order.customerName},\nYour Order *#${order.id}* is *${order.status}*.\nAmount: ${order.totalAmount}.\n\n- Ravi-Textile`;
+      const message = `Hello ${order.customerName},\nYour Order *#${order.id}* is *${order.status}*.\nAmount: ${currency}${order.totalAmount}.\n\n- Ravi-Textile`;
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -222,8 +223,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, 
                          <tr key={idx} className="border-b border-slate-50 last:border-0">
                             <td className="py-4 px-4 font-medium text-slate-700">{item.productName}</td>
                             <td className="py-4 px-4 text-center text-slate-600">{item.quantity} {item.unit}</td>
-                            <td className="py-4 px-4 text-right text-slate-600">Rs. {item.unitPrice}</td>
-                            <td className="py-4 px-4 text-right font-bold text-slate-800">Rs. {item.quantity * item.unitPrice}</td>
+                            <td className="py-4 px-4 text-right text-slate-600">{currency}{item.unitPrice}</td>
+                            <td className="py-4 px-4 text-right font-bold text-slate-800">{currency}{item.quantity * item.unitPrice}</td>
                          </tr>
                       ))}
                    </tbody>
@@ -235,17 +236,17 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, 
                 <div className="w-full sm:w-64 space-y-3">
                    <div className="flex justify-between text-xs sm:text-sm text-slate-500">
                       <span>Subtotal</span>
-                      <span>Rs. {order.totalAmount}</span>
+                      <span>{currency}{order.totalAmount}</span>
                    </div>
                    {order.taxRate && (
                       <div className="flex justify-between text-xs sm:text-sm text-slate-500">
                          <span>Tax ({order.taxRate}%)</span>
-                         <span>+Rs. {(order.totalAmount * order.taxRate/100).toFixed(2)}</span>
+                         <span>+{currency}{(order.totalAmount * order.taxRate/100).toFixed(2)}</span>
                       </div>
                    )}
                    <div className="flex justify-between items-center pt-4 border-t border-slate-100">
                       <span className="font-bold text-slate-800 text-base sm:text-lg">Total</span>
-                      <span className="font-bold text-indigo-600 text-xl sm:text-2xl">Rs. {order.totalAmount}</span>
+                      <span className="font-bold text-indigo-600 text-xl sm:text-2xl">{currency}{order.totalAmount}</span>
                    </div>
                 </div>
              </div>

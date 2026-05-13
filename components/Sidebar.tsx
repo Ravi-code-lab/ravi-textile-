@@ -6,7 +6,7 @@ import {
   ChevronDown, Scissors, Truck, Receipt, 
   FileText, ClipboardList, Briefcase, 
   Archive, ArrowRightLeft, SearchCheck, Layers, UserCircle, Wallet, Fingerprint, Home, FlaskConical, BookOpen, MapPin, UserCog, Megaphone, ShieldCheck, Banknote, Undo2, ShoppingBag, Activity, FlaskRound, Coins, Landmark,
-  Bell, CheckSquare, Users
+  Bell, CheckSquare, Users, Database, Pipette, Ruler, Send
 } from 'lucide-react';
 import { ViewState, TeamMember, UIPreferences, CompanyInfo } from '../types';
 
@@ -15,8 +15,8 @@ interface SidebarProps {
   setView: (view: ViewState) => void;
   onLogout: () => void;
   user?: TeamMember;
-  uiPrefs: UIPreferences;
-  onUpdateUiPrefs: (prefs: UIPreferences) => void;
+  uiPrefs?: UIPreferences;
+  onUpdateUiPrefs?: (prefs: UIPreferences) => void;
   companyInfo: CompanyInfo;
   features?: Record<string, boolean>;
   isGitHubConnected?: boolean;
@@ -35,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     'Sales Matrix': true,
     'Procurement Hub': true,
     'Manufacturing Unit': true,
+    'Textile Hub': true,
     'Material & Assets': true,
     'Financial Hub': true,
     'Registries': true
@@ -55,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { id: 'TASKS', label: 'Tasks', icon: CheckSquare },
         { id: 'NOTIFICATIONS', label: 'Notifications', icon: Bell },
         { id: 'TEAM', label: 'Team', icon: Users },
+        { id: 'PROJECTS', label: 'Projects', icon: Briefcase },
       ].filter(item => isEnabled(item.id))
     },
     {
@@ -92,10 +94,21 @@ const Sidebar: React.FC<SidebarProps> = ({
       ].filter(item => isEnabled(item.id))
     },
     {
+      title: 'Textile Hub',
+      icon: Layers,
+      items: [
+        { id: 'YARN_MANAGEMENT', label: 'Yarn Management', icon: Layers },
+        { id: 'DYEING_PROCESSING', label: 'Dyeing & Processing', icon: Pipette },
+        { id: 'FABRIC_COSTING', label: 'Fabric Costing', icon: Ruler },
+        { id: 'DISPATCH_PLANNER', label: 'Dispatch Planner', icon: Send },
+      ].filter(item => isEnabled(item.id))
+    },
+    {
       title: 'Material & Assets',
       icon: Boxes,
       items: [
         { id: 'INVENTORY', label: 'Inventory', icon: Layers },
+        { id: 'OPENING_STOCK', label: 'Opening Stock', icon: Database },
         { id: 'CATALOG', label: 'Catalog', icon: Palette },
         { id: 'STOCK_TRANSFER', label: 'Transfers', icon: ArrowRightLeft },
         { id: 'PACK_DESIGN', label: 'Combos', icon: Archive },

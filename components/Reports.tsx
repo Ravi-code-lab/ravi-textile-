@@ -8,6 +8,8 @@ import { FileText, Download, TrendingUp, TrendingDown, Package, Users, IndianRup
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { InventoryItem, Order, ProductionJob, Supplier } from '../types';
+import SalesAnalytics from './SalesAnalytics';
+import DeliveryAnalytics from './DeliveryAnalytics';
 
 interface ReportsProps {
   inventory: InventoryItem[];
@@ -20,7 +22,7 @@ interface ReportsProps {
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const Reports: React.FC<ReportsProps> = ({ inventory, orders, production, suppliers, currency = '₹' }) => {
-  const [activeTab, setActiveTab] = useState<'SALES' | 'INVENTORY' | 'VENDORS'>('SALES');
+  const [activeTab, setActiveTab] = useState<'SALES' | 'INVENTORY' | 'VENDORS' | 'BI' | 'DELIVERY'>('SALES');
 
   // --- SALES ANALYTICS ---
   const salesByMonth = useMemo(() => {
@@ -210,6 +212,8 @@ const Reports: React.FC<ReportsProps> = ({ inventory, orders, production, suppli
              <button onClick={() => setActiveTab('SALES')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'SALES' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Sales</button>
              <button onClick={() => setActiveTab('INVENTORY')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'INVENTORY' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Inventory</button>
              <button onClick={() => setActiveTab('VENDORS')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'VENDORS' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Vendors</button>
+             <button onClick={() => setActiveTab('BI')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'BI' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Sales BI</button>
+             <button onClick={() => setActiveTab('DELIVERY')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'DELIVERY' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Delivery</button>
           </div>
        </div>
 
@@ -316,6 +320,8 @@ const Reports: React.FC<ReportsProps> = ({ inventory, orders, production, suppli
                 </div>
              </div>
           )}
+          {activeTab === 'BI' && <SalesAnalytics orders={orders} currency={currency} />}
+          {activeTab === 'DELIVERY' && <DeliveryAnalytics />}
        </div>
     </div>
   );

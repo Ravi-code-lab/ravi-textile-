@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { InventoryItem, Unit, MaterialType, InventoryRoll, Order } from '../types';
+import { InventoryItem, Unit, MaterialType, InventoryRoll, Order, ProductionJob, Design } from '../types';
 import { 
   Search, Plus, Package, List, AlertTriangle, Download, 
   MapPin, Edit2, Trash2, Database, ShieldCheck, 
@@ -10,10 +10,13 @@ import {
   ChevronRight, ArrowRight
 } from 'lucide-react';
 import BaseModal from './BaseModal';
+import SmartPurchase from './SmartPurchase';
 
 interface InventoryProps {
   items: InventoryItem[];
   orders?: Order[];
+  production?: ProductionJob[];
+  designs?: Design[];
   onAdd: (item: InventoryItem) => void;
   onUpdate: (item: InventoryItem) => void;
   onDelete: (id: string) => void;
@@ -21,10 +24,10 @@ interface InventoryProps {
 }
 
 const Inventory: React.FC<InventoryProps> = ({ 
-  items, orders = [], onAdd, onUpdate, onDelete, currency = '₹' 
+  items, orders = [], production = [], designs = [], onAdd, onUpdate, onDelete, currency = '₹' 
 }) => {
   const [filter, setFilter] = useState('');
-  const [activeTab, setActiveTab] = useState<'STOCK' | 'AGEING' | 'ROLLS'>('STOCK');
+  const [activeTab, setActiveTab] = useState<'STOCK' | 'AGEING' | 'ROLLS' | 'SMART'>('STOCK');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   
@@ -121,7 +124,8 @@ const Inventory: React.FC<InventoryProps> = ({
                   {[
                     { id: 'STOCK', label: 'All Stock' },
                     { id: 'ROLLS', label: 'Rolls' },
-                    { id: 'AGEING', label: 'Ageing' }
+                    { id: 'AGEING', label: 'Ageing' },
+                    { id: 'SMART', label: 'Smart Purchase' }
                   ].map(t => (
                       <button 
                         key={t.id} 
@@ -239,6 +243,8 @@ const Inventory: React.FC<InventoryProps> = ({
                           </motion.div>
                        ))}
                     </motion.div>
+                ) : activeTab === 'SMART' ? (
+                  <SmartPurchase production={production} designs={designs} inventory={items} />
                 ) : (
                   <motion.div 
                     key="ageing-empty"

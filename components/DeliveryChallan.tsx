@@ -9,6 +9,7 @@ import {
   ChevronRight, MoreHorizontal, ExternalLink, Filter, Weight, Archive, CheckCircle
 } from 'lucide-react';
 import BaseModal from './BaseModal';
+import SmartDelivery from './SmartDelivery';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -26,6 +27,7 @@ const DeliveryChallan: React.FC<DeliveryChallanProps> = ({
   companyInfo = { name: 'RAVI-TEXTILE', address: 'Surat, GJ', gstin: '', email: '', website: '', logoUrl: '' }
 }) => {
   const [filter, setFilter] = useState('');
+  const [activeView, setActiveView] = useState<'LIST' | 'SMART'>('LIST');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrderLink, setSelectedOrderLink] = useState<string>('');
   
@@ -174,6 +176,10 @@ const DeliveryChallan: React.FC<DeliveryChallanProps> = ({
         </div>
         
         <div className="flex items-center gap-3">
+           <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+             <button onClick={() => setActiveView('LIST')} className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${activeView === 'LIST' ? 'bg-slate-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800'}`}>Challans</button>
+             <button onClick={() => setActiveView('SMART')} className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${activeView === 'SMART' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800'}`}>Smart Plan</button>
+           </div>
            <button onClick={() => setIsModalOpen(true)} className="bg-slate-900 dark:bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all flex items-center gap-2">
              <Plus className="w-4 h-4"/> Create delivery challan
            </button>
@@ -181,6 +187,9 @@ const DeliveryChallan: React.FC<DeliveryChallanProps> = ({
       </div>
 
       {/* Main Table Matrix */}
+      {activeView === 'SMART' ? (
+        <SmartDelivery orders={orders} />
+      ) : (
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex flex-col flex-1 overflow-hidden">
           <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
               <div className="relative flex-1 group">
@@ -246,6 +255,7 @@ const DeliveryChallan: React.FC<DeliveryChallanProps> = ({
               </table>
           </div>
       </div>
+      )}
 
       {/* Creation Modal */}
       <BaseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Initialize delivery challan" size="xl">
