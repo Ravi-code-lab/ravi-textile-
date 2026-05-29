@@ -5,7 +5,7 @@ import {
   Building, Search, Plus, MapPin, Phone, Landmark, 
   ArrowUpRight, LayoutGrid, List, Mail, Edit2, 
   Trash2, User, Globe, ShieldCheck, Filter, Download,
-  Check, X, Loader2
+  Check, X, Loader2, Sparkles
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import BaseModal from './BaseModal';
@@ -27,6 +27,18 @@ const Customers: React.FC<CustomersProps> = ({
   const [formData, setFormData] = useState<Partial<Customer>>({ 
     type: 'RETAILER', name: '', contactPerson: '', phone: '', email: '', address: '', gstin: '' 
   });
+
+  const customFields = useMemo(() => {
+    const raw = localStorage.getItem('erpnext_custom_fields');
+    if (raw) {
+      try {
+        return JSON.parse(raw).filter((f: any) => f.docType === 'Customer');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  }, [isModalOpen]);
 
   const filteredCustomers = useMemo(() => {
     const searchLower = (filter || '').toLowerCase();
@@ -164,6 +176,17 @@ const Customers: React.FC<CustomersProps> = ({
                          <h4 className="font-bold text-slate-800 dark:text-white uppercase truncate mb-1">{c.name}</h4>
                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-4">{c.contactPerson || 'Regular Customer'}</p>
                          
+                         {/* Render Custom Fields if any */}
+                         {customFields.some((f: any) => (c as any)[f.key]) && (
+                            <div className="text-[10px] mb-3 p-1.5 bg-indigo-50/50 dark:bg-slate-900 rounded border border-indigo-50 dark:border-slate-800 space-y-1">
+                               {customFields.map((f: any) => (c as any)[f.key] && (
+                                  <div key={f.id} className="truncate">
+                                     <span className="font-black uppercase text-indigo-700 dark:text-indigo-400">{f.label}:</span> <span className="font-bold text-slate-700 dark:text-slate-350">{(c as any)[f.key]}</span>
+                                  </div>
+                               ))}
+                            </div>
+                         )}
+                         
                          <div className="mt-auto space-y-2 pt-3 border-t border-slate-50 dark:border-slate-800">
                             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase truncate">
                                 <Phone className="w-3 h-3 text-indigo-500"/> {c.phone || 'No Phone'}
@@ -193,6 +216,7 @@ const Customers: React.FC<CustomersProps> = ({
                     <select className="macos-input w-full font-bold" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})}>
                         <option value="RETAILER">Retailer</option>
                         <option value="WHOLESALER">Wholesaler</option>
+                        <option value="BRAND">Brand / Label</option>
                     </select>
                 </div>
 
@@ -220,6 +244,43 @@ const Customers: React.FC<CustomersProps> = ({
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Office Address</label>
                     <textarea rows={3} className="macos-input w-full" value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value.toUpperCase()})} placeholder="FULL POSTAL ADDRESS..." />
                 </div>
+
+                {customFields.length > 0 && (
+                   <div className="md:col-span-2 border-t border-dashed border-slate-200 dark:border-slate-800 pt-5 space-y-4">
+                      <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest px-1 flex items-center gap-1.5 align-middle">
+                         <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-pulse"/> ERPNext Custom Columns
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         {customFields.map((f: any) => (
+                            <div key={f.id} className="space-y-1">
+                               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">{f.label} {f.required && <span className="text-rose-500">*</span>}</label>
+                               {f.type === 'select' ? (
+                                  <select 
+                                     required={f.required}
+                                     className="macos-input w-full font-bold bg-white dark:bg-slate-900"
+                                     value={(formData as any)[f.key] || ''}
+                                     onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                                  >
+                                     <option value="">{f.placeholder}</option>
+                                     {f.options.map((opt: string) => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                      ))}
+                                  </select>
+                               ) : (
+                                  <input 
+                                     required={f.required}
+                                     type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                                     className="macos-input w-full font-bold bg-white dark:bg-slate-900"
+                                     placeholder={f.placeholder}
+                                     value={(formData as any)[f.key] || ''}
+                                     onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                                  />
+                               )}
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+                )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">

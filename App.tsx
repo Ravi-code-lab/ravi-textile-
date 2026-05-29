@@ -63,7 +63,7 @@ import {
   YarnLot, YarnBlend, DyeingJob, FabricCosting, DispatchEntry
 } from './types';
 import { getItem, setItem, hydrateFromNative } from './utils/indexedDB';
-import { Loader2, Command, Menu } from 'lucide-react';
+import { Loader2, Command, Menu, Search } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -80,7 +80,8 @@ const App: React.FC = () => {
     reduceMotion: false, primaryColor: 'indigo', borderRadius: 'md', density: 'comfortable', scale: 1
   });
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
-    name: 'Ravi-Textile', address: '', gstin: '', email: '', website: '', logoUrl: ''
+    name: 'Ravi-Textile', address: '', gstin: '', email: '', website: '', logoUrl: '',
+    phone: '', pan: '', bankName: '', accountNumber: '', ifscCode: ''
   });
   const [features, setFeatures] = useState<Record<string, boolean>>({});
   const [shopifyConfig, setShopifyConfig] = useState<ShopifyConfig>({ enabled: false, shopUrl: '', accessToken: '' });
@@ -431,14 +432,20 @@ const App: React.FC = () => {
                     </h2>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => setIsCommandPaletteOpen(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-slate-500 hover:bg-black/10 dark:hover:bg-white/10 transition-all text-xs font-medium"
-                    >
-                        <Command className="w-3.5 h-3.5" />
-                        <span>Search...</span>
-                        <span className="opacity-40 ml-2">⌘K</span>
-                    </button>
+                    <div className="relative w-60 sm:w-80 group">
+                       <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+                          <Search className="w-4 h-4"/>
+                       </div>
+                       <input 
+                          type="button"
+                          onClick={() => setIsCommandPaletteOpen(true)}
+                          className="w-full text-left pl-10 pr-12 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider focus:outline-none hover:bg-slate-200 dark:hover:bg-slate-950 transition-all shadow-inner cursor-pointer text-ellipsis overflow-hidden"
+                          value="Search or type > command..." 
+                       />
+                       <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                          <kbd className="h-5 px-1.5 flex items-center justify-center text-[9px] font-black tracking-widest text-slate-400 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md shadow-sm">⌘K</kbd>
+                       </div>
+                    </div>
                     <div className="h-4 w-px bg-macos-border dark:bg-macos-darkBorder" />
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         Sync: {lastSync}
@@ -456,7 +463,7 @@ const App: React.FC = () => {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.3, ease: 'easeOut' }}
                         >
-                            {currentView === 'DASHBOARD' && <Dashboard inventory={active(inventory)} production={active(production)} orders={active(orders)} karigars={active(karigars)} machines={active(machines)} features={features} currency={currencySymbol} />}
+                            {currentView === 'DASHBOARD' && <Dashboard inventory={active(inventory)} production={active(production)} orders={active(orders)} karigars={active(karigars)} machines={active(machines)} features={features} currency={currencySymbol} setView={setCurrentView} />}
                             
                             {/* Master Hubs */}
                             {currentView === 'KARIGARS' && <Karigars karigars={active(karigars)} onAdd={karigarMgr.add} onUpdate={karigarMgr.update} onDelete={karigarMgr.remove} currency={currencySymbol} />}
@@ -472,7 +479,7 @@ const App: React.FC = () => {
                             {currentView === 'DELIVERY_CHALLAN' && <DeliveryChallan orders={active(orders)} customers={active(customers)} onAddChallan={ordMgr.add} onUpdateChallan={ordMgr.update} currency={currencySymbol} companyInfo={companyInfo} />}
 
                             {/* Production & Inventory */}
-                            {currentView === 'PRODUCTION' && <Production jobs={active(production)} karigars={active(karigars)} designs={active(designs)} machines={active(machines)} samples={active(samples)} onAddJob={prodMgr.add} onUpdateJob={prodMgr.update} currency={currencySymbol} />}
+                            {currentView === 'PRODUCTION' && <Production jobs={active(production)} karigars={active(karigars)} designs={active(designs)} machines={active(machines)} samples={active(samples)} orders={active(orders)} onAddJob={prodMgr.add} onUpdateJob={prodMgr.update} currency={currencySymbol} />}
                             {currentView === 'SAMPLING' && <Sampling samples={active(samples)} designs={active(designs)} karigars={active(karigars)} customers={active(customers)} onAdd={sampleMgr.add} onUpdate={sampleMgr.update} onDelete={sampleMgr.remove} currency={currencySymbol} />}
                             {currentView === 'TRACK_LOTS' && <TrackLots jobs={active(production)} onUpdateJob={prodMgr.update} />}
                             {currentView === 'QUALITY' && <QualityControl reports={active(qualityReports)} inspections={active(inspections)} onAddInspection={inspectionMgr.add} currency={currencySymbol} />}

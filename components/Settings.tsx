@@ -48,9 +48,32 @@ const Settings: React.FC<SettingsProps> = ({
   advancedConfig, onUpdateAdvancedConfig,
   lastSync
 }) => {
-  const [activeTab, setActiveTab] = useState<'COMPANY' | 'BILLING' | 'MODULES' | 'THEME' | 'STORAGE' | 'INTEGRATIONS' | 'SECURITY' | 'COMMUNICATION' | 'ADVANCED'>('COMPANY');
+  const [activeTab, setActiveTab] = useState<'COMPANY' | 'BILLING' | 'MODULES' | 'CUSTOMIZER' | 'THEME' | 'STORAGE' | 'INTEGRATIONS' | 'SECURITY' | 'COMMUNICATION' | 'ADVANCED'>('COMPANY');
   const [isSaving, setIsSaving] = useState(false);
   const [vaultStatus, setVaultStatus] = useState<any>(null);
+  
+  // Custom DocType Fields representation (ERPNext feature)
+  const [customFields, setCustomFields] = useState<any[]>([]);
+  const [newField, setNewField] = useState({
+    docType: 'Customer',
+    label: '',
+    type: 'text',
+    options: '',
+    placeholder: '',
+    required: false
+  });
+
+  useEffect(() => {
+    const raw = localStorage.getItem('erpnext_custom_fields');
+    if (raw) {
+      try { setCustomFields(JSON.parse(raw)); } catch (e) { console.error(e); }
+    }
+  }, []);
+
+  const saveCustomFields = (fields: any[]) => {
+    setCustomFields(fields);
+    localStorage.setItem('erpnext_custom_fields', JSON.stringify(fields));
+  };
   
   // Local form state
   const [localCompany, setLocalCompany] = useState<CompanyInfo>(companyInfo);
@@ -263,6 +286,7 @@ const Settings: React.FC<SettingsProps> = ({
                 { id: 'COMPANY', label: 'Company', icon: Building },
                 { id: 'BILLING', label: 'Billing', icon: Coins },
                 { id: 'MODULES', label: 'Modules', icon: LayoutGrid },
+                { id: 'CUSTOMIZER', label: 'DocType Customizer', icon: Settings2 },
                 { id: 'INTEGRATIONS', label: 'Integrations', icon: Store },
                 { id: 'SECURITY', label: 'Security', icon: ShieldCheck },
                 { id: 'COMMUNICATION', label: 'Network', icon: Globe },
@@ -328,6 +352,152 @@ const Settings: React.FC<SettingsProps> = ({
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 px-1">IFSC Code</label>
                                 <input className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-sm font-mono bg-white dark:bg-slate-950 uppercase" value={localCompany.ifscCode || ''} onChange={e => setLocalCompany({...localCompany, ifscCode: e.target.value.toUpperCase()})} />
                             </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'CUSTOMIZER' && (
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-6 animate-fade-in text-left">
+                        <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase">Frappe DocType CRM & Custom Fields</h3>
+                                <p className="text-xs text-slate-500 mt-1">Design and inject custom metadata fields into primary ERP documents (DocTypes).</p>
+                            </div>
+                            <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded">ERPNext engine</span>
+                        </div>
+
+                        {/* Add Field Section */}
+                        <div className="bg-slate-50 dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+                            <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Add Custom Field Entry</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Target DocType</label>
+                                    <select 
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold"
+                                        value={newField.docType}
+                                        onChange={e => setNewField({...newField, docType: e.target.value})}
+                                    >
+                                        <option value="Customer">Customer Master</option>
+                                        <option value="Order">Sales Order (Invoice)</option>
+                                        <option value="InventoryItem">Yarn/Stock Item</option>
+                                        <option value="ProductionJob">Production Lot</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Field Title / Label</label>
+                                    <input 
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold outline-none ring-offset-current focus:ring-1 focus:ring-indigo-500"
+                                        placeholder="e.g. Quality Grade"
+                                        value={newField.label}
+                                        onChange={e => setNewField({...newField, label: e.target.value})}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Information Type</label>
+                                    <select 
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold"
+                                        value={newField.type}
+                                        onChange={e => setNewField({...newField, type: e.target.value})}
+                                    >
+                                        <option value="text">Single Line Text</option>
+                                        <option value="number">Numeric</option>
+                                        <option value="date">Date Selector</option>
+                                        <option value="select">Dropdown Selection</option>
+                                    </select>
+                                </div>
+                                {newField.type === 'select' && (
+                                    <div className="md:col-span-2 space-y-1">
+                                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Options (Comma separated list)</label>
+                                        <input 
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-medium"
+                                            placeholder="Standard, Premium, Gold Label, Super Luxury"
+                                            value={newField.options}
+                                            onChange={e => setNewField({...newField, options: e.target.value})}
+                                        />
+                                    </div>
+                                )}
+                                <div className="space-y-1">
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Placeholder Guidance</label>
+                                    <input 
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-medium focus:ring-1 focus:ring-indigo-500"
+                                        placeholder="e.g. Choose grade value..."
+                                        value={newField.placeholder}
+                                        onChange={e => setNewField({...newField, placeholder: e.target.value})}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 pt-4">
+                                    <input 
+                                        type="checkbox" 
+                                        id="cf_required"
+                                        className="rounded border-slate-200 dark:border-slate-800 focus:ring-indigo-500"
+                                        checked={newField.required}
+                                        onChange={e => setNewField({...newField, required: e.target.checked})}
+                                    />
+                                    <label htmlFor="cf_required" className="text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer">Required input</label>
+                                </div>
+                            </div>
+                            <div className="pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!newField.label.trim()) return;
+                                        const key = newField.label.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+                                        const parsedField = {
+                                            id: `cf_${Date.now()}`,
+                                            key,
+                                            docType: newField.docType,
+                                            label: newField.label.trim(),
+                                            type: newField.type,
+                                            options: newField.type === 'select' ? newField.options.split(',').map(s => s.trim()).filter(Boolean) : [],
+                                            placeholder: newField.placeholder || `Enter ${newField.label}`,
+                                            required: newField.required
+                                        };
+                                        saveCustomFields([...customFields, parsedField]);
+                                        setNewField({
+                                            docType: 'Customer',
+                                            label: '',
+                                            type: 'text',
+                                            options: '',
+                                            placeholder: '',
+                                            required: false
+                                        });
+                                    }}
+                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                                >
+                                    + Inject Custom Column
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* List of custom fields */}
+                        <div className="space-y-3">
+                            <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Active Custom Field Extensions</h4>
+                            {customFields.length === 0 ? (
+                                <p className="text-xs text-slate-400 italic">No custom field extensions defined yet. Add fields above to upgrade your documents with Frappe capabilities.</p>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {customFields.map(f => (
+                                        <div key={f.id} className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg flex justify-between items-center text-xs group hover:border-indigo-500/50 transition-all">
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-tight">{f.label}</span>
+                                                    <span className="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 uppercase font-bold px-1 rounded">{f.type}</span>
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                                    DocType: <strong className="text-slate-600 dark:text-slate-400 font-bold">{f.docType}</strong> | Required: {f.required ? 'YES' : 'NO'}
+                                                </div>
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => saveCustomFields(customFields.filter(cf => cf.id !== f.id))}
+                                                className="text-slate-400 hover:text-red-500 p-1.5 rounded bg-transparent opacity-100 dark:opacity-80 transition-opacity"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                   )}

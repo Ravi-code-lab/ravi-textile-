@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Order, Customer } from '../types';
-import { User, MapPin, CreditCard, FileText, Phone, Mail, Printer, Share2, Calendar, Package, Box } from 'lucide-react';
+import { User, MapPin, CreditCard, FileText, Phone, Mail, Printer, Share2, Calendar, Package, Box, Sparkles } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import BaseModal from './BaseModal';
@@ -14,6 +14,19 @@ interface OrderDetailsModalProps {
 }
 
 const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, onClose, currency = '₹' }) => {
+  const [customFields, setCustomFields] = useState<any[]>([]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem('erpnext_custom_fields');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        setCustomFields(parsed.filter((f: any) => f.docType === 'Order'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
   
   const generateInvoice = () => {
     const doc = new jsPDF();
@@ -206,6 +219,21 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, customer, 
                    </div>
                 </div>
              </div>
+
+             {/* Dynamic ERPNext Fields in Invoice Details */}
+             {customFields.some((f: any) => (order as any)[f.key]) && (
+                <div className="mb-6 p-4 bg-indigo-50/20 dark:bg-slate-900/40 rounded-lg border border-indigo-100/35 dark:border-slate-850 flex flex-wrap gap-x-8 gap-y-2 text-[11px]">
+                   <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-extrabold uppercase tracking-wider w-full mb-1">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> ERPNext Spec Columns
+                   </div>
+                   {customFields.map((f: any) => (order as any)[f.key] && (
+                      <div key={f.id} className="flex gap-2">
+                         <span className="font-bold text-slate-400 uppercase">{f.label}:</span>
+                         <span className="font-extrabold text-slate-700 dark:text-slate-200 uppercase">{(order as any)[f.key]}</span>
+                      </div>
+                   ))}
+                </div>
+             )}
 
              {/* Items Table */}
              <div className="mb-8 overflow-x-auto">

@@ -29,6 +29,19 @@ const SalesOrder: React.FC<SalesOrderProps> = ({
   const [statusFilter, setStatusFilter] = useState<'PENDING' | 'SHIPPED' | 'DELIVERED' | 'ALL'>('PENDING');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [customFields, setCustomFields] = useState<any[]>([]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem('erpnext_custom_fields');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        setCustomFields(parsed.filter((f: any) => f.docType === 'Order'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
   
   const [formData, setFormData] = useState<Partial<Order>>({
     status: 'PENDING', paymentStatus: 'UNPAID', items: [],
@@ -143,6 +156,17 @@ const SalesOrder: React.FC<SalesOrderProps> = ({
                 <div className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5"/> {order.orderDate}</div>
                 <div className="flex items-center gap-1.5 justify-end"><Package className="w-3.5 h-3.5"/> {order.items.length} SKUs</div>
               </div>
+
+              {customFields.some((f: any) => (order as any)[f.key]) && (
+                 <div className="mb-4 p-2 bg-indigo-50/50 dark:bg-slate-950/30 rounded border border-indigo-100/50 dark:border-indigo-900/10 space-y-1 text-[10px] uppercase">
+                    {customFields.map((f: any) => (order as any)[f.key] && (
+                       <div key={f.id} className="flex justify-between">
+                          <span className="font-extrabold text-indigo-700 dark:text-indigo-400">{f.label}:</span>
+                          <span className="font-bold text-slate-600 dark:text-slate-350">{(order as any)[f.key]}</span>
+                       </div>
+                    ))}
+                 </div>
+              )}
               <div className="pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
                  <div>
                     <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Total Payload</p>
@@ -236,6 +260,43 @@ const SalesOrder: React.FC<SalesOrderProps> = ({
                       </div>
                   </div>
               </div>
+
+              {customFields.length > 0 && (
+                 <div className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+                    <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest px-1 flex items-center gap-1.5">
+                       ERPNext Custom DocType Columns
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {customFields.map((f: any) => (
+                          <div key={f.id} className="space-y-1">
+                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">{f.label} {f.required && <span className="text-rose-500">*</span>}</label>
+                             {f.type === 'select' ? (
+                                <select 
+                                   required={f.required}
+                                   className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-750 px-3 py-2 text-sm rounded-lg"
+                                   value={(formData as any)[f.key] || ''}
+                                   onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                                >
+                                   <option value="">{f.placeholder}</option>
+                                   {f.options.map((opt: string) => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                             ) : (
+                                <input 
+                                   required={f.required}
+                                   type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                                   className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-755 px-3 py-2 text-sm rounded-lg"
+                                   placeholder={f.placeholder}
+                                   value={(formData as any)[f.key] || ''}
+                                   onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                                />
+                             )}
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+              )}
 
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 space-y-4">

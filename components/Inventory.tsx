@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InventoryItem, Unit, MaterialType, InventoryRoll, Order, ProductionJob, Design } from '../types';
 import { 
@@ -7,7 +7,7 @@ import {
   MapPin, Edit2, Trash2, Database, ShieldCheck, 
   Clock, TrendingUp, History, Filter, Scroll, LayoutGrid,
   CheckCircle, MoreVertical, Layers, Target, Scissors,
-  ChevronRight, ArrowRight
+  ChevronRight, ArrowRight, Sparkles
 } from 'lucide-react';
 import BaseModal from './BaseModal';
 import SmartPurchase from './SmartPurchase';
@@ -30,6 +30,19 @@ const Inventory: React.FC<InventoryProps> = ({
   const [activeTab, setActiveTab] = useState<'STOCK' | 'AGEING' | 'ROLLS' | 'SMART'>('STOCK');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [customFields, setCustomFields] = useState<any[]>([]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem('erpnext_custom_fields');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        setCustomFields(parsed.filter((f: any) => f.docType === 'InventoryItem'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
   
   const [formData, setFormData] = useState<Partial<InventoryItem>>({
     type: MaterialType.FABRIC, unit: 'METER', quantity: 0, minStockLevel: 0, pricePerUnit: 0,
@@ -164,7 +177,18 @@ const Inventory: React.FC<InventoryProps> = ({
                                 <tr key={item.id} onClick={() => { setSelectedItem(item); setFormData(item); setIsModalOpen(true); }} className="hover:bg-macos-accent/5 dark:hover:bg-macos-accent/10 cursor-default transition-all group">
                                     <td className="px-6 py-4">
                                         <p className="font-bold text-slate-900 dark:text-white tracking-tight">{item.name}</p>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">#{item.id}</span>
+                                        <div className="flex items-center gap-2">
+                                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">#{item.id}</span>
+                                           {customFields.some((f: any) => (item as any)[f.key]) && (
+                                              <div className="flex flex-wrap gap-1.5">
+                                                 {customFields.map((f: any) => (item as any)[f.key] && (
+                                                    <span key={f.id} className="text-[9px] font-bold tracking-widest bg-indigo-50 dark:bg-slate-950 px-1.5 py-0.5 rounded border border-indigo-100/40 dark:border-indigo-900/20 text-indigo-700 dark:text-indigo-400 uppercase">
+                                                       {f.label}: {(item as any)[f.key]}
+                                                    </span>
+                                                 ))}
+                                              </div>
+                                           )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                       <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 uppercase tracking-widest">
@@ -273,11 +297,11 @@ const Inventory: React.FC<InventoryProps> = ({
                       <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-2">
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Quantity</label>
-                            <input type="number" className="macos-input w-full" value={formData.quantity || ''} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} />
+                            <input type="number" className="macos-input w-full" value={formData.quantity ?? 0} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} />
                          </div>
                          <div className="space-y-2">
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Price Per Unit</label>
-                            <input type="number" className="macos-input w-full" value={formData.pricePerUnit || ''} onChange={e => setFormData({...formData, pricePerUnit: Number(e.target.value)})} />
+                            <input type="number" className="macos-input w-full" value={formData.pricePerUnit ?? 0} onChange={e => setFormData({...formData, pricePerUnit: Number(e.target.value)})} />
                          </div>
                       </div>
                   </div>
@@ -296,6 +320,44 @@ const Inventory: React.FC<InventoryProps> = ({
                          </div>
                       </div>
                   </div>
+
+                  {customFields.length > 0 && (
+                     <div className="macos-card p-6 space-y-4">
+                        <div className="flex items-center gap-2 border-b border-macos-border dark:border-macos-darkBorder pb-2 mb-2">
+                           <Sparkles className="w-4 h-4 text-indigo-500" />
+                           <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-widest">ERPNext Custom Fields</h4>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           {customFields.map((f: any) => (
+                              <div key={f.id} className="space-y-2">
+                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{f.label} {f.required && <span className="text-rose-500">*</span>}</label>
+                                 {f.type === 'select' ? (
+                                    <select 
+                                       required={f.required}
+                                       className="macos-input w-full text-sm cursor-pointer"
+                                       value={(formData as any)[f.key] || ''}
+                                       onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                                    >
+                                       <option value="">{f.placeholder}</option>
+                                       {f.options.map((opt: string) => (
+                                          <option key={opt} value={opt}>{opt}</option>
+                                       ))}
+                                    </select>
+                                 ) : (
+                                    <input 
+                                       required={f.required}
+                                       type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                                       className="macos-input w-full text-sm"
+                                       placeholder={f.placeholder}
+                                       value={(formData as any)[f.key] || ''}
+                                       onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                                    />
+                                 )}
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
                 </div>
 
                 <div className="space-y-6">
@@ -320,7 +382,7 @@ const Inventory: React.FC<InventoryProps> = ({
                      </div>
                      <div className="space-y-2">
                         <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest px-1">Min Stock Level</label>
-                        <input type="number" className="macos-input w-full" value={formData.minStockLevel} onChange={e => setFormData({...formData, minStockLevel: Number(e.target.value)})} />
+                        <input type="number" className="macos-input w-full" value={formData.minStockLevel ?? 0} onChange={e => setFormData({...formData, minStockLevel: Number(e.target.value)})} />
                      </div>
                   </div>
                 </div>

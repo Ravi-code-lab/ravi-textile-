@@ -6,7 +6,7 @@ import {
   Search, Plus, ShoppingCart, Calendar, MessageSquare, Printer, Package, Check, X, 
   Truck, DollarSign, Filter, ChevronRight, Tag, MapPin, Hash, Ship, LayoutGrid, 
   List, Share2, ClipboardCheck, ArrowUpRight, Gauge, Clock, MoreVertical, Trash2,
-  ExternalLink, Download
+  ExternalLink, Download, Layers
 } from 'lucide-react';
 import BaseModal from './BaseModal';
 import OrderDetailsModal from './OrderDetailsModal';
@@ -23,6 +23,8 @@ interface OrdersProps {
   currency?: string;
 }
 
+const SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
 const Orders: React.FC<OrdersProps> = ({ 
   orders, customers, inventory, designs, agents, 
   onAddOrder, onUpdateOrder, onDeleteOrder, currency = '₹' 
@@ -31,6 +33,7 @@ const Orders: React.FC<OrdersProps> = ({
   const [statusFilter, setStatusFilter] = useState<'PENDING' | 'SHIPPED' | 'DELIVERED' | 'ALL'>('ALL');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [showSizeModal, setShowSizeModal] = useState(false);
   
   const [formData, setFormData] = useState<Partial<Order>>({
     status: 'PENDING', paymentStatus: 'UNPAID', items: [],
@@ -38,7 +41,7 @@ const Orders: React.FC<OrdersProps> = ({
     taxRate: 5, vehicleNo: '', transportName: '', agentName: ''
   });
   
-  const [newItem, setNewItem] = useState<OrderItem>({ productName: '', quantity: 1, unitPrice: 0, unit: 'PIECE' });
+  const [newItem, setNewItem] = useState<OrderItem>({ productName: '', quantity: 0, unitPrice: 0, unit: 'PIECE', sizeWise: {} });
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -209,7 +212,7 @@ const Orders: React.FC<OrdersProps> = ({
                   </div>
                   <div className="space-y-2">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Order Date</label>
-                    <input type="date" required className="macos-input w-full" value={formData.orderDate} onChange={e => setFormData({...formData, orderDate: e.target.value})} />
+                    <input type="date" required className="macos-input w-full" value={formData.orderDate || ''} onChange={e => setFormData({...formData, orderDate: e.target.value})} />
                   </div>
               </div>
 
@@ -220,25 +223,44 @@ const Orders: React.FC<OrdersProps> = ({
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1 relative">
-                      <input list="prod-list" className="macos-input w-full" placeholder="Product SKU" value={newItem.productName} onChange={e => {
+                      <input list="prod-list" className="macos-input w-full" placeholder="Product SKU" value={newItem.productName || ''} onChange={e => {
                           const d = designs.find(des => des.name === e.target.value) || inventory.find(i => i.name === e.target.value);
                           setNewItem({...newItem, productName: e.target.value, unitPrice: (d as any)?.processCostPerPiece ? (d as any).processCostPerPiece * 1.5 : (d as any)?.pricePerUnit || 0});
                       }} />
                       <datalist id="prod-list">{[...designs, ...inventory].map(x => <option key={x.id} value={x.name}/>)}</datalist>
                     </div>
                     <div className="flex gap-3">
-                      <input type="number" className="macos-input w-full sm:w-24" placeholder="Qty" value={newItem.quantity || ''} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
+                      <input type="number" className="macos-input w-full sm:w-24" placeholder="Qty" value={newItem.quantity || ''} readOnly />
+                      <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="button" 
+                        onClick={() => {
+                          setShowSizeModal(true);
+                        }}
+                        className="bg-slate-100 dark:bg-white/5 p-3 rounded-xl border border-macos-border dark:border-macos-darkBorder flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500"
+                      >
+                        <Layers className="w-4 h-4"/> Sizes
+                      </motion.button>
                       <motion.button 
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         type="button" 
-                        onClick={() => { if(newItem.productName && newItem.quantity) { setFormData({...formData, items: [...(formData.items || []), newItem]}); setNewItem({productName:'', quantity:1, unitPrice:0, unit:'PIECE'}); } }} 
+                        onClick={() => { if(newItem.productName && newItem.quantity) { setFormData({...formData, items: [...(formData.items || []), newItem]}); setNewItem({productName:'', quantity:1, unitPrice:0, unit:'PIECE', sizeWise: {}}); } }} 
                         className="bg-macos-accent text-white p-3 rounded-xl shadow-sm shrink-0"
                       >
                         <Plus className="w-5 h-5"/>
                       </motion.button>
                     </div>
                   </div>
+
+                  {newItem.sizeWise && Object.values(newItem.sizeWise).some(v => v > 0) && (
+                    <div className="flex flex-wrap gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-lg border border-dashed border-macos-border dark:border-macos-darkBorder">
+                       {Object.entries(newItem.sizeWise).map(([s, q]) => q > 0 && (
+                         <span key={s} className="px-2 py-1 bg-white dark:bg-slate-800 rounded-md text-[10px] font-bold text-macos-accent">{s}: {q}</span>
+                       ))}
+                    </div>
+                  )}
                   
                   <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-1">
                     <AnimatePresence mode="popLayout">
@@ -279,6 +301,44 @@ const Orders: React.FC<OrdersProps> = ({
       </BaseModal>
 
       {selectedOrder && <OrderDetailsModal order={selectedOrder} customer={customers.find(c => c.name === selectedOrder.customerName)} onClose={() => setSelectedOrder(null)} currency={currency} />}
+
+      {/* Size Selection Modal */}
+      <BaseModal isOpen={showSizeModal} onClose={() => setShowSizeModal(false)} title="Select Sizes & Quantities" size="md">
+           <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                 {SIZES.map(size => (
+                   <div key={size} className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{size}</label>
+                      <input 
+                        type="number" 
+                        min="0" 
+                        className="macos-input w-full p-3 font-bold" 
+                        placeholder="0"
+                        value={newItem.sizeWise?.[size] || ''} 
+                        onChange={e => {
+                          const val = Number(e.target.value);
+                          const newSizeWise = { ...(newItem.sizeWise || {}), [size]: val };
+                          const total = Object.values(newSizeWise).reduce((s, v) => s + (v || 0), 0);
+                          setNewItem({...newItem, sizeWise: newSizeWise, quantity: total});
+                        }}
+                      />
+                   </div>
+                 ))}
+              </div>
+              <div className="pt-4 border-t border-macos-border dark:border-macos-darkBorder flex items-center justify-between">
+                 <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Quantity</p>
+                    <p className="text-xl font-black text-macos-accent">{newItem.quantity} PCS</p>
+                 </div>
+                 <button 
+                  onClick={() => setShowSizeModal(false)}
+                  className="macos-btn-primary px-8"
+                 >
+                    Done
+                 </button>
+              </div>
+           </div>
+      </BaseModal>
     </motion.div>
   );
 };

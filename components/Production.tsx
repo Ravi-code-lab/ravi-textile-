@@ -1,7 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ProductionJob, Karigar, Design, CuttingLog, Machine, ProductionLog, SampleRequest } from '../types';
+import { ProductionJob, Karigar, Design, CuttingLog, Machine, ProductionLog, SampleRequest, Order } from '../types';
 import { 
   Plus, Edit2, Scissors, Factory, 
   Search, CheckCircle, ArrowRight, RotateCcw, PenTool, Sparkles, Clock, Printer, FlaskRound,
@@ -20,6 +20,7 @@ interface ProductionProps {
   designs?: Design[];
   machines?: Machine[];
   samples?: SampleRequest[];
+  orders?: Order[];
   onAddJob: (job: ProductionJob) => void;
   onUpdateJob: (job: ProductionJob) => void;
   currency?: string;
@@ -36,7 +37,7 @@ const PRODUCTION_STAGES = [
 const SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
 const Production: React.FC<ProductionProps> = ({ 
-  jobs, karigars, designs = [], machines = [], samples = [],
+  jobs, karigars, designs = [], machines = [], samples = [], orders = [],
   onAddJob, onUpdateJob, currency = '₹'
 }) => {
   const [activeTab, setActiveTab] = useState<'KANBAN' | 'LIST' | 'ANALYTICS' | 'JOBS' | 'JOBSLIP' | 'QR' | 'SLIP_ANALYTICS'>('KANBAN');
@@ -46,23 +47,45 @@ const Production: React.FC<ProductionProps> = ({
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isProdLogModalOpen, setIsProdLogModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<ProductionJob | null>(null);
+  const [customFields, setCustomFields] = useState<any[]>([]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem('erpnext_custom_fields');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        setCustomFields(parsed.filter((f: any) => f.docType === 'ProductionJob'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
   const [formData, setFormData] = useState<Partial<ProductionJob>>({ 
+    productName: '',
     status: 'CUTTING', 
     priority: 'NORMAL', 
     quantity: 0, 
     progress: 0,
-    sizeWise: {}
+    sizeWise: {},
+    sampleId: '',
+    orderId: '',
+    assignedMachine: '',
+    deadline: ''
   });
   const [logData, setLogData] = useState<Partial<CuttingLog>>({ 
     date: new Date().toISOString().split('T')[0], 
     quantity: 0,
-    sizeWise: {}
+    sizeWise: {},
+    operatorName: '',
+    notes: ''
   });
   const [prodLogData, setProdLogData] = useState<Partial<ProductionLog>>({
     timestamp: new Date().toISOString(),
     quantityProduced: 0,
     wasteProduced: 0,
-    efficiency: 85
+    efficiency: 85,
+    machineId: '',
+    operatorId: ''
   });
 
   const productionStats = useMemo(() => {
@@ -471,6 +494,16 @@ const Production: React.FC<ProductionProps> = ({
                           )}
                           
                           <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1 truncate">{job.productName}</h4>
+
+                          {customFields.some((f: any) => (job as any)[f.key]) && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {customFields.map((f: any) => (job as any)[f.key] && (
+                                <span key={f.id} className="text-[8px] font-bold px-1.5 py-0.5 bg-indigo-50 dark:bg-slate-950/40 text-indigo-700 dark:text-indigo-300 rounded-lg border border-indigo-100/40 dark:border-indigo-900/20 uppercase tracking-tight">
+                                  {f.label}: {(job as any)[f.key]}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           
                           {job.sizeWise && Object.keys(job.sizeWise).length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mb-4">
@@ -608,6 +641,15 @@ const Production: React.FC<ProductionProps> = ({
                               ))}
                             </div>
                           )}
+                          {customFields.some((f: any) => (job as any)[f.key]) && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {customFields.map((f: any) => (job as any)[f.key] && (
+                                <span key={f.id} className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-50 dark:bg-slate-950/40 text-indigo-700 dark:text-indigo-300 rounded-md border border-indigo-100/40 dark:border-indigo-900/10 uppercase tracking-tight">
+                                  {f.label}: {(job as any)[f.key]}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -675,7 +717,7 @@ const Production: React.FC<ProductionProps> = ({
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Design Selection</label>
-                    <select required className="macos-input w-full" value={formData.productName} onChange={e => {
+                    <select required className="macos-input w-full" value={formData.productName || ''} onChange={e => {
                       const design = designs.find(d => d.name === e.target.value);
                       setFormData({...formData, productName: e.target.value, imageUrl: design?.imageUrl});
                     }}>
@@ -685,7 +727,7 @@ const Production: React.FC<ProductionProps> = ({
                 </div>
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Linked Sample (Optional)</label>
-                    <select className="macos-input w-full" value={formData.sampleId} onChange={e => {
+                    <select className="macos-input w-full" value={formData.sampleId || ''} onChange={e => {
                       const sample = samples.find(s => s.id === e.target.value);
                       setFormData({...formData, sampleId: e.target.value, imageUrl: sample?.imageUrl || formData.imageUrl});
                     }}>
@@ -693,18 +735,40 @@ const Production: React.FC<ProductionProps> = ({
                       {samples.map(s => <option key={s.id} value={s.id}>#{s.id} - {s.designName}</option>)}
                     </select>
                 </div>
+                <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Linked Sales Order (Optional)</label>
+                    <select className="macos-input w-full" value={formData.orderId || ''} onChange={e => {
+                      const order = orders.find(o => o.id === e.target.value);
+                      if (order) {
+                        // Optionally autopopulate sizeWise if it's the only item in order
+                        const item = order.items[0];
+                        setFormData({
+                          ...formData, 
+                          orderId: e.target.value, 
+                          productName: item.productName,
+                          sizeWise: item.sizeWise || formData.sizeWise,
+                          quantity: item.quantity || formData.quantity
+                        });
+                      } else {
+                        setFormData({...formData, orderId: e.target.value});
+                      }
+                    }}>
+                      <option value="">No Order Linked</option>
+                      {orders.map(o => <option key={o.id} value={o.id}>#{o.id} - {o.customerName}</option>)}
+                    </select>
+                </div>
              </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Quantity (Pcs)</label>
                    <div className="relative">
-                      <input type="number" required className="macos-input w-full bg-black/5 dark:bg-white/5 font-bold" value={formData.quantity} readOnly />
+                      <input type="number" required className="macos-input w-full bg-black/5 dark:bg-white/5 font-bold" value={formData.quantity || 0} readOnly />
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">Auto</div>
                    </div>
                 </div>
                 <div className="space-y-2">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Priority</label>
-                   <select className="macos-input w-full" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value as any})}>
+                   <select className="macos-input w-full" value={formData.priority || 'NORMAL'} onChange={e => setFormData({...formData, priority: e.target.value as any})}>
                       <option value="NORMAL">Normal</option>
                       <option value="HIGH">Urgent</option>
                       <option value="LOW">Low</option>
@@ -714,7 +778,7 @@ const Production: React.FC<ProductionProps> = ({
 
              <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Machine Assignment</label>
-                <select className="macos-input w-full" value={formData.assignedMachine} onChange={e => setFormData({...formData, assignedMachine: e.target.value})}>
+                <select className="macos-input w-full" value={formData.assignedMachine || ''} onChange={e => setFormData({...formData, assignedMachine: e.target.value})}>
                    <option value="">No Machine Assigned</option>
                    {machines.map(m => <option key={m.id} value={m.id}>{m.name} ({m.type})</option>)}
                 </select>
@@ -737,9 +801,47 @@ const Production: React.FC<ProductionProps> = ({
                   ))}
                 </div>
              </div>
+             {customFields.length > 0 && (
+                <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-macos-border dark:border-macos-darkBorder space-y-4">
+                   <div className="flex items-center gap-2 border-b border-macos-border dark:border-macos-darkBorder pb-2 mb-2">
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-widest">ERPNext Custom fields</h4>
+                   </div>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {customFields.map((f: any) => (
+                         <div key={f.id} className="space-y-2">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{f.label} {f.required && <span className="text-rose-500">*</span>}</label>
+                            {f.type === 'select' ? (
+                               <select 
+                                  required={f.required}
+                                  className="macos-input w-full text-sm cursor-pointer"
+                                  value={(formData as any)[f.key] || ''}
+                                  onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                               >
+                                  <option value="">{f.placeholder}</option>
+                                  {f.options.map((opt: string) => (
+                                     <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                               </select>
+                            ) : (
+                               <input 
+                                  required={f.required}
+                                  type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                                  className="macos-input w-full text-sm"
+                                  placeholder={f.placeholder}
+                                  value={(formData as any)[f.key] || ''}
+                                  onChange={e => setFormData({...formData, [f.key]: e.target.value})}
+                               />
+                            )}
+                         </div>
+                      ))}
+                   </div>
+                </div>
+             )}
+
              <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Target Deadline</label>
-                <input type="date" required className="macos-input w-full" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} />
+                <input type="date" required className="macos-input w-full" value={formData.deadline || ''} onChange={e => setFormData({...formData, deadline: e.target.value})} />
              </div>
              <div className="pt-6 flex gap-4">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-2.5 rounded-xl border border-macos-border dark:border-macos-darkBorder text-sm font-bold text-slate-500 hover:bg-black/5 transition-all">Cancel</button>
@@ -754,14 +856,14 @@ const Production: React.FC<ProductionProps> = ({
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Machine</label>
-                   <select className="macos-input w-full" value={prodLogData.machineId} onChange={e => setProdLogData({...prodLogData, machineId: e.target.value})}>
+                   <select className="macos-input w-full" value={prodLogData.machineId || ''} onChange={e => setProdLogData({...prodLogData, machineId: e.target.value})}>
                       <option value="">Select Machine...</option>
                       {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                    </select>
                 </div>
                 <div className="space-y-2">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Operator / Karigar</label>
-                   <select className="macos-input w-full" value={prodLogData.operatorId} onChange={e => setProdLogData({...prodLogData, operatorId: e.target.value})}>
+                   <select className="macos-input w-full" value={prodLogData.operatorId || ''} onChange={e => setProdLogData({...prodLogData, operatorId: e.target.value})}>
                       <option value="">Select Operator...</option>
                       {karigars.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
                    </select>
@@ -770,16 +872,16 @@ const Production: React.FC<ProductionProps> = ({
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Quantity Produced Today</label>
-                   <input type="number" required className="macos-input w-full" value={prodLogData.quantityProduced} onChange={e => setProdLogData({...prodLogData, quantityProduced: Number(e.target.value)})} />
+                   <input type="number" required className="macos-input w-full" value={prodLogData.quantityProduced || 0} onChange={e => setProdLogData({...prodLogData, quantityProduced: Number(e.target.value)})} />
                 </div>
                 <div className="space-y-2">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Waste / Rejection (Pcs)</label>
-                   <input type="number" className="macos-input w-full" value={prodLogData.wasteProduced} onChange={e => setProdLogData({...prodLogData, wasteProduced: Number(e.target.value)})} />
+                   <input type="number" className="macos-input w-full" value={prodLogData.wasteProduced || 0} onChange={e => setProdLogData({...prodLogData, wasteProduced: Number(e.target.value)})} />
                 </div>
              </div>
              <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Efficiency Rating (%)</label>
-                <input type="range" min="0" max="100" className="w-full h-2 bg-black/5 dark:bg-white/5 rounded-lg appearance-none cursor-pointer accent-macos-accent" value={prodLogData.efficiency} onChange={e => setProdLogData({...prodLogData, efficiency: Number(e.target.value)})} />
+                <input type="range" min="0" max="100" className="w-full h-2 bg-black/5 dark:bg-white/5 rounded-lg appearance-none cursor-pointer accent-macos-accent" value={prodLogData.efficiency || 0} onChange={e => setProdLogData({...prodLogData, efficiency: Number(e.target.value)})} />
                 <div className="flex justify-between text-[10px] font-bold text-slate-400">
                    <span>0%</span>
                    <span className="text-macos-accent">{prodLogData.efficiency}%</span>
@@ -805,12 +907,12 @@ const Production: React.FC<ProductionProps> = ({
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Date</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input type="date" required className="macos-input w-full pl-12" value={logData.date} onChange={e => setLogData({...logData, date: e.target.value})} />
+                      <input type="date" required className="macos-input w-full pl-12" value={logData.date || ''} onChange={e => setLogData({...logData, date: e.target.value})} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Quantity (Pcs)</label>
-                    <input type="number" required className="macos-input w-full bg-black/5 dark:bg-white/5 font-bold" value={logData.quantity} readOnly />
+                    <input type="number" required className="macos-input w-full bg-black/5 dark:bg-white/5 font-bold" value={logData.quantity || 0} readOnly />
                   </div>
                 </div>
 
@@ -836,12 +938,12 @@ const Production: React.FC<ProductionProps> = ({
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Operator Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="text" className="macos-input w-full pl-12" placeholder="Operator name" value={logData.operatorName} onChange={e => setLogData({...logData, operatorName: e.target.value})} />
+                    <input type="text" className="macos-input w-full pl-12" placeholder="Operator name" value={logData.operatorName || ''} onChange={e => setLogData({...logData, operatorName: e.target.value})} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Notes</label>
-                  <textarea className="macos-input w-full min-h-[100px]" placeholder="Any specific details..." value={logData.notes} onChange={e => setLogData({...logData, notes: e.target.value})} />
+                  <textarea className="macos-input w-full min-h-[100px]" placeholder="Any specific details..." value={logData.notes || ''} onChange={e => setLogData({...logData, notes: e.target.value})} />
                 </div>
                 <button type="submit" className="w-full macos-btn-primary py-3">Record Cutting Entry</button>
               </form>

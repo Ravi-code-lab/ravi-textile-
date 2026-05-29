@@ -21,16 +21,20 @@ interface FabricCostingProps {
   currency?: string;
 }
 
-const CATEGORIES = ['YARN', 'DYEING', 'WEAVING', 'FINISHING', 'PACKING', 'OVERHEAD', 'OTHER'] as const;
+const CATEGORIES = ['YARN', 'DYEING', 'WEAVING', 'EMBROIDERY', 'PRINTING', 'HANDWORK', 'STITCH_LBR', 'FINISHING', 'PACKING', 'OVERHEAD', 'OTHER'] as const;
 
 const categoryColors: Record<string, string> = {
-  YARN:     'bg-violet-100 text-violet-800 border-violet-200',
-  DYEING:   'bg-blue-100 text-blue-800 border-blue-200',
-  WEAVING:  'bg-emerald-100 text-emerald-800 border-emerald-200',
-  FINISHING:'bg-amber-100 text-amber-800 border-amber-200',
-  PACKING:  'bg-pink-100 text-pink-800 border-pink-200',
-  OVERHEAD: 'bg-slate-100 text-slate-700 border-slate-200',
-  OTHER:    'bg-orange-100 text-orange-800 border-orange-200',
+  YARN:       'bg-violet-100 text-violet-800 border-violet-200',
+  DYEING:     'bg-blue-100 text-blue-800 border-blue-200',
+  WEAVING:    'bg-emerald-100 text-emerald-800 border-emerald-200',
+  EMBROIDERY: 'bg-rose-100 text-rose-800 border-rose-200',
+  PRINTING:   'bg-cyan-100 text-cyan-800 border-cyan-200',
+  HANDWORK:   'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200',
+  STITCH_LBR: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  FINISHING:  'bg-amber-100 text-amber-800 border-amber-200',
+  PACKING:    'bg-pink-100 text-pink-800 border-pink-200',
+  OVERHEAD:   'bg-slate-100 text-slate-700 border-slate-200',
+  OTHER:      'bg-orange-100 text-orange-800 border-orange-200',
 };
 
 const statusColors: Record<string, string> = {

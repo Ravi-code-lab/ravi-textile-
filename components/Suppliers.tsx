@@ -43,6 +43,7 @@ const Suppliers: React.FC<SuppliersProps> = ({
   });
 
   const [poData, setPoData] = useState<Partial<PurchaseOrder>>({
+    supplierId: '',
     items: [], date: new Date().toISOString().split('T')[0], status: 'DRAFT'
   });
 

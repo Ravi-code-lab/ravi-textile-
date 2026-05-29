@@ -145,13 +145,15 @@ export interface Design extends BaseEntity {
     finishedWidth?: string;
     finishedGsm?: string;
     tags?: string[];
+    brandId?: string;
+    brandName?: string;
 }
 
 export interface JobWorkItem { description: string; issuedQuantity: number; receivedQuantity: number; rate: number; unit: Unit | string; quantity: number; wastagePercent: number; rejectedQuantity: number; receiptHistory: any[]; }
 export interface JobWork extends BaseEntity { challanNumber: string; vendorName: string; process: string; issueDate: string; expectedDate: string; status: string; items: JobWorkItem[]; totalCost: number; paymentStatus: string; }
 export interface Transaction extends BaseEntity { date: string; description: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; paymentMethod: string; referenceId?: string; subType?: string; }
-export interface OrderItem { productName: string; quantity: number; unitPrice: number; unit: Unit | string; }
-export interface Order extends BaseEntity { customerName: string; status: string; paymentStatus: string; items: OrderItem[]; orderDate: string; totalAmount: number; agentName?: string; agentId?: string; agentCommissionRate?: number; agentCommissionAmount?: number; taxRate?: number; shippingAddress?: string; dueDate?: string; vehicleNo?: string; transportName?: string; isShopify?: boolean; shopifyOrderId?: string; }
+export interface OrderItem { productName: string; quantity: number; unitPrice: number; unit: Unit | string; sizeWise?: Record<string, number>; }
+export interface Order extends BaseEntity { customerName: string; status: string; paymentStatus: string; items: OrderItem[]; orderDate: string; totalAmount: number; agentName?: string; agentId?: string; agentCommissionRate?: number; agentCommissionAmount?: number; taxRate?: number; shippingAddress?: string; dueDate?: string; vehicleNo?: string; transportName?: string; isShopify?: boolean; shopifyOrderId?: string; brandId?: string; brandName?: string; }
 export interface CuttingLog extends BaseEntity {
   date: string;
   quantity: number;
@@ -171,6 +173,7 @@ export interface ProductionJob extends BaseEntity {
   assignedMachine?: string; 
   imageUrl?: string; 
   sampleId?: string;
+  orderId?: string;
   batchNo?: string;
   cuttingLogs?: CuttingLog[];
   productionLogs?: ProductionLog[];
@@ -218,7 +221,7 @@ export interface QualityReport extends BaseEntity { jobId: string; inspectorName
 export interface ProductionLog extends BaseEntity { jobId: string; machineId: string; operatorId: string; quantityProduced: number; wasteProduced: number; timestamp: string; efficiency?: number; }
 export interface Customer extends BaseEntity { 
   name: string; 
-  type: 'RETAILER' | 'WHOLESALER'; 
+  type: 'RETAILER' | 'WHOLESALER' | 'BRAND'; 
   contactPerson: string; 
   phone: string; 
   email?: string; 
@@ -392,6 +395,7 @@ export interface YarnBlend extends BaseEntity {
   twist?: string;
   status: 'ACTIVE' | 'ARCHIVED';
   notes?: string;
+  description?: string;
 }
 
 // ─── DYEING & PROCESSING ─────────────────────────────────────────────────────

@@ -60,10 +60,12 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onNavi
     }
   ];
 
+  const normalizedQuery = query.startsWith('>') ? query.slice(1).trim() : query;
+
   const filteredItems = sections.map(section => ({
     ...section,
     items: section.items.filter(item => 
-      item.label.toLowerCase().includes(query.toLowerCase())
+      item.label.toLowerCase().includes(normalizedQuery.toLowerCase())
     )
   })).filter(section => section.items.length > 0);
 
